@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Windows Productivity Assistant</title>
+    <link rel="stylesheet" href="./styles/main.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="drag-region"></div>
+        <h1>Daybreak</h1>
+        <p class="subtitle">Your Windows productivity companion</p>
+        <nav class="tab-bar">
+          <button class="tab-button active" data-tab="overview">Overview</button>
+          <button class="tab-button" data-tab="insights">Insights</button>
+          <button class="tab-button" data-tab="settings">Settings</button>
+        </nav>
+      </header>
+      <main class="tab-container">
+        <section class="tab-panel" id="tab-overview"></section>
+        <section class="tab-panel hidden" id="tab-insights"></section>
+        <section class="tab-panel hidden" id="tab-settings"></section>
+      </main>
+    </div>
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>

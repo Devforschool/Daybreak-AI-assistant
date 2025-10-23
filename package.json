@@ -1,0 +1,19 @@
+{
+  "name": "ai-assistant",
+  "version": "0.1.0",
+  "description": "Windows desktop AI assistant panel using OpenRouter.",
+  "main": "src/main/main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "lint": "echo 'No lint script configured'",
+    "test": "echo 'No automated tests defined'"
+  },
+  "dependencies": {
+    "electron-store": "^9.0.0"
+  },
+  "devDependencies": {
+    "electron": "^26.2.0"
+  }
+}

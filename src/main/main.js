@@ -1,27 +1,40 @@
 const { app, BrowserWindow, ipcMain, Notification } = require('electron');
 const path = require('path');
-const Store = require('electron-store');
 const { UsageTracker } = require('../common/usageTracker');
 const { DigestScheduler } = require('../common/digestScheduler');
 const { OpenRouterClient } = require('../common/openRouterClient');
 
-const store = new Store({
-  name: 'assistant-settings',
-  defaults: {
-    apiKey: '',
-    usageLog: [],
-    lastDigestAt: null,
-    lastDigest: null,
-    preferences: {
-      pollIntervalMs: 30000,
-      digestIntervalMs: 24 * 60 * 60 * 1000
-    }
-  }
-});
+let Store;
+let store;
 
 let mainWindow;
 let usageTracker;
 let digestScheduler;
+
+async function initializeStore() {
+  if (store) {
+    return store;
+  }
+
+  const module = await import('electron-store');
+  Store = module.default;
+
+  store = new Store({
+    name: 'assistant-settings',
+    defaults: {
+      apiKey: '',
+      usageLog: [],
+      lastDigestAt: null,
+      lastDigest: null,
+      preferences: {
+        pollIntervalMs: 30000,
+        digestIntervalMs: 24 * 60 * 60 * 1000
+      }
+    }
+  });
+
+  return store;
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -86,7 +99,9 @@ function notifyDigestReady(digest) {
   notification.show();
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await initializeStore();
+
   createWindow();
   setupUsageTracker();
   setupDigestScheduler();
@@ -109,38 +124,46 @@ app.on('window-all-closed', () => {
   }
 });
 
-ipcMain.handle('settings:get', () => ({
-  apiKey: store.get('apiKey'),
-  preferences: store.get('preferences')
-}));
+ipcMain.handle('settings:get', async () => {
+  const settingsStore = await initializeStore();
+  return {
+    apiKey: settingsStore.get('apiKey'),
+    preferences: settingsStore.get('preferences')
+  };
+});
 
-ipcMain.handle('settings:set-api-key', (_event, apiKey) => {
-  store.set('apiKey', apiKey || '');
+ipcMain.handle('settings:set-api-key', async (_event, apiKey) => {
+  const settingsStore = await initializeStore();
+  settingsStore.set('apiKey', apiKey || '');
   return { success: true };
 });
 
-ipcMain.handle('usage:get-summary', () => {
+ipcMain.handle('usage:get-summary', async () => {
+  const settingsStore = await initializeStore();
   return usageTracker.getSummary({
-    since: Date.now() - (store.get('preferences.digestIntervalMs') || 24 * 60 * 60 * 1000)
+    since: Date.now() - (settingsStore.get('preferences.digestIntervalMs') || 24 * 60 * 60 * 1000)
   });
 });
 
-ipcMain.handle('digest:get-latest', () => {
+ipcMain.handle('digest:get-latest', async () => {
+  await initializeStore();
   return digestScheduler.getLatestDigest();
 });
 
 ipcMain.handle('digest:trigger', async () => {
+  await initializeStore();
   const digest = await digestScheduler.runDigest();
   return digest;
 });
 
-ipcMain.handle('preferences:update', (_event, updates) => {
-  const preferences = { ...store.get('preferences'), ...updates };
-  store.set('preferences', preferences);
+ipcMain.handle('preferences:update', async (_event, updates) => {
+  const settingsStore = await initializeStore();
+  const preferences = { ...settingsStore.get('preferences'), ...updates };
+  settingsStore.set('preferences', preferences);
 
   if (Object.prototype.hasOwnProperty.call(updates, 'pollIntervalMs') && usageTracker) {
     usageTracker.stop();
-    usageTracker = new UsageTracker(store, {
+    usageTracker = new UsageTracker(settingsStore, {
       pollIntervalMs: preferences.pollIntervalMs,
       onError: (error) => console.error('Usage tracker error:', error)
     });

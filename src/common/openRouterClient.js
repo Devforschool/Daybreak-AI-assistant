@@ -1,7 +1,7 @@
 class OpenRouterClient {
   constructor(store, options = {}) {
     this.store = store;
-    this.model = options.model || 'openrouter/auto';
+    this.model = options.model || '@preset/enovinx-oss-v1';
     this.systemPrompt = options.systemPrompt ||
       'You are a productivity assistant that summarizes computer usage into insights, trends, news, and actionable tasks.';
   }
